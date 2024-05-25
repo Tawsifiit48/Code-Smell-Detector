@@ -3,13 +3,11 @@ self.addEventListener('install', (event) => {
         caches.open('my-cache').then((cache) => {
             return cache.addAll([
                 '/',
-                '/index.html',
-                '/detect.html',
-                '/about.html',
+                'http://127.0.0.1:5500/index.html',
+                'http://127.0.0.1:5500/detect.html',
+                'http://127.0.0.1:5500/about.html',
                 '/styles.css',
                 'images/logo1.png',
-                'images/192.png',
-                'images/512.png',
                 'images/gradientBlueLines.jpg',
             ]);
         })
