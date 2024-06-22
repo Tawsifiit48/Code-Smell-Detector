@@ -55,6 +55,7 @@ $(document).ready(function () {
                     <th>Detected Code Smell</th>
                     <th>Class/Method Name</th>
                     <th>Suggested Fixes</th>
+                    <th>Possible Bugs</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,6 +68,7 @@ $(document).ready(function () {
                 <td>Long Method Smell</td>
                 <td>${response.long_method_name}</td>
                 <td>Consider breaking down the method into smaller, more focused methods or turn the method into its own class.</td>
+                <td>Logical Bug</td>
             </tr>
         `;
                 hasSmell = true;
@@ -78,6 +80,7 @@ $(document).ready(function () {
                 <td>God Class Smell</td>
                 <td>${response.className}</td>
                 <td>If the class is handling multiple responsibilities, identify cohesive groups of class attributes and methods that can be extracted into their own class.</td>
+                <td>Structural Defects,Incompleteness Bug</td>
             </tr>
         `;
                 hasSmell = true;
@@ -89,6 +92,7 @@ $(document).ready(function () {
                 <td>Feature Envy Smell</td>
                 <td>${response.featureEnvy_method_name}</td>
                 <td>Move method to another class or consider creating a new class.</td>
+                <td>Incorrect behavior Bug</td>
             </tr>
         `;
                 hasSmell = true;
