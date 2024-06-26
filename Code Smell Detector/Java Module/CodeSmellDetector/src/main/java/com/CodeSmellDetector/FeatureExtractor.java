@@ -31,6 +31,7 @@ public class FeatureExtractor {
 
     public PredictionResponse extractFeatures() {
         javaCode = cleanJavaCode(javaCode);// removes utf8 encoding and returns plain text
+        System.out.println("JavaCode: " + javaCode);
         JavaParser parser = new JavaParser();
         long wmcnamm = 0;// Weighted Methods per Class
         long locClass = 0;// lines of code in class
@@ -64,6 +65,7 @@ public class FeatureExtractor {
                     className = classDecl.getNameAsString();
                 }
             }
+
             List<String> classFields = new ArrayList<>();
             for (ClassOrInterfaceDeclaration classDecl : cu.findAll(ClassOrInterfaceDeclaration.class)) {
                 classFields.addAll(
@@ -118,13 +120,16 @@ public class FeatureExtractor {
             String jsonInputString = String.format(
                     "{\"LOC_method\": %d, \"CC_method\": %d, \"WMCNAMM_type\": %d, \"LOC_type\": %d, \"ATFD_method\": %d, \"LAA_method\": %f}",
                     locMethod, cc, wmcnamm, locClass, atfdCount, localAccessesCount);
+
             System.out.println("Made Request");
             System.out.println(jsonInputString);
             PredictionResponse prediction = makeRequest(jsonInputString);
+
             prediction.setClassName(className);
             prediction.setFeatureEnvy_method_name(feMethodName);
             prediction.setLong_method_name(longMethodName);
             prediction.setErrorStatus("Success");
+
             return prediction;
         }
         return new PredictionResponse("Java Class is invalid, Please try again");
@@ -157,55 +162,55 @@ public class FeatureExtractor {
     }
 
     public PredictionResponse makeRequest(String jsonInputString) {
+        HttpURLConnection conn = null;
         try {
             URL url = new URL("http://localhost:5000/predict");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
+            conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
-            System.out.println("");
+
+            // Write JSON input string to the output stream
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = jsonInputString.getBytes("utf-8");
                 os.write(input, 0, input.length);
-                int responseCode = conn.getResponseCode();
-                System.out.println(responseCode); // Should be 200 if everything's ok
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    try (BufferedReader br = new BufferedReader(
-                            new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+            }
 
-                        StringBuilder response = new StringBuilder();
-                        String responseLine;
-                        while ((responseLine = br.readLine()) != null) {
-                            response.append(responseLine.trim());
-                        }
-                        System.out.println(response.toString());
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        try {
-                            PredictionResponse prediction = objectMapper.readValue(response.toString(),
-                                    PredictionResponse.class);
-                            return prediction;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            return null;
-                        }
+            // Check response code
+            int responseCode = conn.getResponseCode();
+            System.out.println("Response code: " + responseCode); // Should be 200 if everything's ok
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Read the response from the input stream
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
                     }
-                } else {
-                    System.out.println("Failed to get a valid response from server.");
-                    return null;
+                    System.out.println(response.toString());
+
+                    // Convert response to PredictionResponse object
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    return objectMapper.readValue(response.toString(), PredictionResponse.class);
                 }
+            } else {
+                System.out.println("Failed to get a valid response from server.");
+                return null;
             }
 
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-
+            throw new RuntimeException("MalformedURLException occurred.", e);
         } catch (ProtocolException e) {
-            throw new RuntimeException("Error setting up request method.", e);
-
+            throw new RuntimeException("ProtocolException occurred.", e);
         } catch (IOException e) {
-            throw new RuntimeException("IO error occurred.", e);
-
+            throw new RuntimeException("IOException occurred.", e);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
+
 }
